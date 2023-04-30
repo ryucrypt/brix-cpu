@@ -231,7 +231,7 @@ const fetchBalances = (mode) => {
     }
     wax.rpc.get_currency_balance("eosio.token", NODE, "WAX")
         .then(data => {
-            $("#balance").text(data[0].split(" ")[0].split(".")[0] + " WAX");
+            $("#balance").text(parseInt(data[0].split(" ")[0].split(".")[0]).toLocaleString() + " WAX");
         });
 }
 
