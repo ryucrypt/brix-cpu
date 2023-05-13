@@ -46,10 +46,11 @@
             </div>
         </div>
         <header class="d-flex flex-wrap justify-content-center text-center py-3 mb-4 border-bottom">
-            <a href="./index.html" class="navbar-brand me-auto text-light text-wrap" style="font-family:'Press Start 2P'">
+            <a href="https://brixsociety.io" target="_blank" class="navbar-brand me-auto text-light text-wrap" style="font-family:'Press Start 2P'">
                 <h2>BRIX SOCIETY CPU RENTALS</h2>
             </a>
             <ul class="nav nav-pills">
+                <li class="nav-item" id="loginbtn"><a href="https://staking2.brixsociety.io" class="nav-link" aria-current="page">Staking</a></li>
                 <li class="nav-item" id="loginbtn"><a href="javascript:void(0)" class="nav-link active" aria-current="page" data-bs-toggle="modal" data-bs-target="#login">Login</a></li>
                 <li class="nav-item dropdown visually-hidden" id="wallet">
                     <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">wallet</a>
@@ -64,9 +65,15 @@
                 <div id="err_msg" class="alert alert-danger visually-hidden" role="alert"></div>
                 <div id="pass_msg" class="alert alert-success visually-hidden" role="alert"></div>
             </div>
-            <div class="row mb-3 d-flex text-center">
-                <h6>CPU Available</h6>
-                <h2 id="balance">0 WAX</h2>
+            <div class="row mb-3 d-flex justify-content-center text-center">
+                <div class="col-auto">
+                    <h6>Total in Pool</h6>
+                    <h2 id="total">0 WAX</h2>
+                </div>
+                <div class="col-auto">
+                    <h6>Available for Rental</h6>
+                    <h2 id="balance">0 WAX</h2>
+                </div>
             </div>
             <div class="row mb-3 d-flex justify-content-center text-center">
                 <div class="col-auto">
@@ -198,6 +205,18 @@ const PARAMS = {
     "json": true,
     "show_payer": false
 };
+var STAKES = {
+    "code": CONTRACT,
+    "scope": CONTRACT,
+    "table": "stakes",
+    "lower_bound": "",
+    "upper_bound": "",
+    "index_position": 1,
+    "limit": 100,
+    "reverse": false,
+    "json": true,
+    "show_payer": false
+};
 var wallet = "";
 var perms = "";
 var rates = {};
@@ -216,7 +235,7 @@ const formatToken = (precision, amount) => {
     return (+(Math.round(+(amount + 'e' + precision)) + 'e' + -precision)).toFixed(precision);
 }
 
-const fetchBalances = (mode) => {
+const fetchBalances = async(mode) => {
     if (mode) {
         for (let i = 0; i < balances.length; i++) {
             balances[i].remove();
@@ -237,9 +256,31 @@ const fetchBalances = (mode) => {
                 });
         }
     }
-    wax.rpc.get_currency_balance("eosio.token", NODE, "WAX")
+
+    var total = 0;
+    while (true) {
+        data = await wax.rpc.get_table_rows(STAKES);
+        for (const i of data.rows) {
+            total += parseFloat(i.quantity.split(" ")[0]);
+        }
+        if (!data.more) {
+            $("#total").text(parseInt(total).toLocaleString() + " WAX");
+            break;
+        }
+        STAKES.lower_bound = data.next_key;
+    }
+    wax.rpc.get_account(NODE)
         .then(data => {
-            $("#balance").text(parseInt(data[0].split(" ")[0].split(".")[0]).toLocaleString() + " WAX");
+            let liquid = parseFloat(data.core_liquid_balance.split(" ")[0]);
+            $("#balance").text(parseInt(liquid).toLocaleString() + " WAX");
+
+            if (data.refund_request != null) {
+                total += parseFloat(data.refund_request.cpu_amount.split(" ")[0]) + liquid;
+            } else {
+                total += liquid;
+            }
+
+            $("#total").text(parseInt(total).toLocaleString() + " WAX");
         });
 }
 
