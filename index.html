@@ -238,7 +238,12 @@ String.prototype.format = function () {
 };
 
 const formatToken = (precision, amount) => {
-    return (+(Math.round(+(amount + 'e' + precision)) + 'e' + -precision)).toFixed(precision);
+    return (+(Math.round(+(amount + 'e' + precision)) + 'e' + -precision)).toLocaleString(
+        undefined, {
+            minimumFractionDigits: precision,
+            maximumFractionDigits: precision
+        }
+    );
 }
 
 const fetchBalances = async(mode) => {
@@ -255,7 +260,13 @@ const fetchBalances = async(mode) => {
                         $("#balances").prepend(item);
                         balances.push(item);
                     } else {
-                        let item = $(`<li><a class='dropdown-item' href='javascript:void(0)'>${data[0]}</a></li>`);
+                        let item;
+                        try {
+                            let token = data[0].split(" ");
+                            item = $(`<li><a class="dropdown-item" href="javascript:void(0)">${formatToken(token[0].split(".")[1].length, token[0])} ${token[1]}</a></li>`);
+                        } catch(e) {
+                            item = $(`<li><a class="dropdown-item" href="javascript:void(0)">${data[0]}</a></li>`);
+                        }
                         $("#balances").prepend(item);
                         balances.push(item);
                     }
