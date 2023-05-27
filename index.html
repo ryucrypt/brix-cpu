@@ -238,6 +238,10 @@ String.prototype.format = function () {
 };
 
 const formatToken = (precision, amount) => {
+    return (+(Math.round(+(amount + 'e' + precision)) + 'e' + -precision)).toFixed(precision);
+}
+
+const formatTokenLocale = (precision, amount) => {
     return (+(Math.round(+(amount + 'e' + precision)) + 'e' + -precision)).toLocaleString(
         undefined, {
             minimumFractionDigits: precision,
@@ -263,7 +267,7 @@ const fetchBalances = async(mode) => {
                         let item;
                         try {
                             let token = data[0].split(" ");
-                            item = $(`<li><a class="dropdown-item" href="javascript:void(0)">${formatToken(token[0].split(".")[1].length, token[0])} ${token[1]}</a></li>`);
+                            item = $(`<li><a class="dropdown-item" href="javascript:void(0)">${formatTokenLocale(token[0].split(".")[1].length, token[0])} ${token[1]}</a></li>`);
                         } catch(e) {
                             item = $(`<li><a class="dropdown-item" href="javascript:void(0)">${data[0]}</a></li>`);
                         }
@@ -301,20 +305,24 @@ const fetchBalances = async(mode) => {
         });
 }
 
-const calcRate = (days, precision, symbol) => {
+const calcRate = (days, precision, symbol, locale) => {
     var base = rates[symbol].filter(obj => obj.days == days);
     var stake = 0;
     if ($("#stake").val() != "") {
         stake = parseFloat($("#stake").val());
     }
     var rate = stake / base[0].multiplier * base[0].rate;
-    return formatToken(precision, rate) + " " + symbol;
+    if (locale == undefined) {
+        return formatToken(precision, rate) + " " + symbol;
+    } else {
+        return formatTokenLocale(precision, rate) + " " + symbol;
+    }
 }
 
 const calcUnit = (days, precision, symbol) => {
     var base = rates[symbol].filter(obj => obj.days == days);
     var rate = DEFAULT / base[0].multiplier * base[0].rate / days;
-    return formatToken(precision, rate) + " " + symbol;
+    return formatTokenLocale(precision, rate) + " " + symbol;
 }
 
 const update = (mode) => {
@@ -323,7 +331,7 @@ const update = (mode) => {
         if (token.symbol != "WAX") {
             precision = token.precision;
         }
-        $(`#price${DAYS[i]}`).text(calcRate(DAYS[i], precision, token.symbol));
+        $(`#price${DAYS[i]}`).text(calcRate(DAYS[i], precision, token.symbol, true));
         if (mode) {
             $(`#unit${DAYS[i]}`).text(calcUnit(DAYS[i], precision, token.symbol));
         }
