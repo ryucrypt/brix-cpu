@@ -87,6 +87,12 @@
                         <option value="WAX">WAX</option>
                     </select>
                 </div>
+                <div class="col-auto">
+                    <label for="node" class="form-label">Rent from</label>
+                    <select class="form-select" id="node">
+                        <option value="auto" selected>Auto</option>
+                    </select>
+                </div>
             </div>
             <div class="row mb-3 d-flex justify-content-center">
                 <div class="col-auto">
@@ -186,8 +192,7 @@
 <script src="js/wallets.js"></script>
 <script>
 const EXPLORER = "https://waxblock.io/transaction/";
-const NODE = "brixcpurentx";
-const CONTRACT = "brixcpucontr";
+const CONTRACT = "rentcpu.brix";
 const TOKENS = [
     {
         "contract": "brixbrixtoke",
@@ -226,12 +231,26 @@ var STAKES = {
     "json": true,
     "show_payer": false
 };
+const NODES = {
+    "code": CONTRACT,
+    "scope": CONTRACT,
+    "table": "nodes",
+    "lower_bound": "",
+    "upper_bound": "",
+    "index_position": 1,
+    "limit": 100,
+    "reverse": false,
+    "json": true,
+    "show_payer": false
+};
 var wallet = "";
 var perms = "";
+var node = "auto";
 var rates = {};
 var loggedin = false;
 var token = TOKENS[0];
 var balances = [];
+var nodes = [];
 
 String.prototype.format = function () {
     var args = arguments;
@@ -282,30 +301,30 @@ const fetchBalances = async(mode) => {
     }
 
     var total = 0;
+    var liquid = 0;
     while (true) {
         data = await wax.rpc.get_table_rows(STAKES);
         for (const i of data.rows) {
             total += parseFloat(i.quantity.split(" ")[0]);
         }
         if (!data.more) {
-            $("#total").text(parseInt(total).toLocaleString() + " WAX");
             break;
         }
         STAKES.lower_bound = data.next_key;
     }
-    wax.rpc.get_account(NODE)
-        .then(data => {
-            let liquid = parseFloat(data.core_liquid_balance.split(" ")[0]);
-            $("#balance").text(parseInt(liquid).toLocaleString() + " WAX");
+    for (let n of nodes) {
+        var data = await wax.rpc.get_account(n);
+        var bal = parseFloat(data.core_liquid_balance.split(" ")[0])
+        liquid += bal;
 
-            if (data.refund_request != null) {
-                total += parseFloat(data.refund_request.cpu_amount.split(" ")[0]) + liquid;
-            } else {
-                total += liquid;
-            }
-
-            $("#total").text(parseInt(total).toLocaleString() + " WAX");
-        });
+        if (data.refund_request != null) {
+            total += parseFloat(data.refund_request.cpu_amount.split(" ")[0]) + bal;
+        } else {
+            total += bal;
+        }
+    }
+    $("#balance").text(parseInt(liquid).toLocaleString() + " WAX");
+    $("#total").text(parseInt(total).toLocaleString() + " WAX");
 }
 
 const calcRate = (days, precision, symbol, locale) => {
@@ -418,6 +437,10 @@ const run = async(days) => {
     }
 
     var qty = calcRate(days, token.precision, token.symbol);
+    var memo = `${days};${to}`;
+    if (node != "auto") {
+        memo = `${days};${to};${node}`
+    }
     try {
         var actions = [{
             account: token.contract,
@@ -430,7 +453,7 @@ const run = async(days) => {
                 from: wallet,
                 to: CONTRACT,
                 quantity: qty,
-                memo: `${days};${to}`
+                memo: memo
             }
         }];
         var txn = await wallet_transact(actions);
@@ -442,7 +465,50 @@ const run = async(days) => {
 }
 
 $(document).ready(async function() {
+    var data = await wax.rpc.get_table_rows(NODES);
+    const url_params = new URLSearchParams(window.location.search);
+    if (url_params.get("node") != null) {
+        const temp_node = url_params.get("node").trim();
+        if (data.rows.some(obj => obj.node ===  temp_node)) {
+            node = temp_node;
+        }
+    }
+
+    $("#node").empty();
+    nodes = [];
+
+    if (node == "auto") {
+        $("#node").append($("<option>", {
+            value: "auto",
+            text: "Auto",
+            selected: "selected"
+        }));
+    } else {
+        $("#node").append($("<option>", {
+            value: "auto",
+            text: "Auto"
+        }));
+        $("#node").append($("<option>", {
+            value: node,
+            text: node,
+            selected: "selected"
+        }));
+    }
+
+    for (let i of data.rows) {
+        nodes.push(i.node);
+        if (i.node == node) {
+            continue;
+        } else {
+            $("#node").append($("<option>", {
+                value: i.node,
+                text: i.node
+            }));
+        }
+    }
+
     await fetchBalances(false);
+
     wax.rpc.get_table_rows(PARAMS)
         .then(data => {
             for (let i = 0; i < data.rows.length; i++) {
@@ -467,11 +533,17 @@ $(document).ready(async function() {
             $("#stake").on("input", () => {update(false)});
         });
 
-    $("#stake_other").change(() => {$("#stake_for").toggleClass("visually-hidden")});
+    $("#stake_other").change(() => {
+        $("#stake_for").toggleClass("visually-hidden")
+    });
     $("#currency").change(() => {
         token = TOKENS.filter(obj => obj.symbol == $("#currency").val())[0];
         update(true);
     });
+    $("#node").change(() => {
+        node = $("#node").val();
+    });
+
     if (await wallet_isAutoLoginAvailable()) {
         await login();
     }
