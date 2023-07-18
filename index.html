@@ -300,12 +300,16 @@ const fetchBalances = async(mode) => {
         }
     }
 
-    var total = 0;
-    var liquid = 0;
+    for (let n of nodes) {
+        n.staked = 0;
+        n.liquid = 0;
+        n.refunding = 0;
+    }
     while (true) {
         data = await wax.rpc.get_table_rows(STAKES);
         for (const i of data.rows) {
-            total += parseFloat(i.quantity.split(" ")[0]);
+            n = nodes.find(item => item.name == i.node);
+            n.staked += parseFloat(i.quantity.split(" ")[0]);
         }
         if (!data.more) {
             break;
@@ -313,18 +317,14 @@ const fetchBalances = async(mode) => {
         STAKES.lower_bound = data.next_key;
     }
     for (let n of nodes) {
-        var data = await wax.rpc.get_account(n);
-        var bal = parseFloat(data.core_liquid_balance.split(" ")[0])
-        liquid += bal;
+        var data = await wax.rpc.get_account(n.name);
+        n.liquid = parseFloat(data.core_liquid_balance.split(" ")[0]);
 
         if (data.refund_request != null) {
-            total += parseFloat(data.refund_request.cpu_amount.split(" ")[0]) + bal;
-        } else {
-            total += bal;
+            n.refunding = parseFloat(data.refund_request.cpu_amount.split(" ")[0]);
         }
     }
-    $("#balance").text(parseInt(liquid).toLocaleString() + " WAX");
-    $("#total").text(parseInt(total).toLocaleString() + " WAX");
+    setCPUBal(node);
 }
 
 const calcRate = (days, precision, symbol, locale) => {
@@ -358,6 +358,23 @@ const update = (mode) => {
             $(`#unit${DAYS[i]}`).text(calcUnit(DAYS[i], precision, token.symbol));
         }
     }
+}
+
+const setCPUBal = (node) => {
+    var liquid = 0;
+    var total = 0;
+    if (node == "auto") {
+        for (let n of nodes) {
+            total += n.staked + n.liquid + n.refunding;
+            liquid += n.liquid;
+        }
+    } else {
+        var n = nodes.find(item => item.name == node);
+        total = n.staked + n.liquid + n.refunding;
+        liquid = n.liquid;
+    }
+    $("#balance").text(parseInt(liquid).toLocaleString() + " WAX");
+    $("#total").text(parseInt(total).toLocaleString() + " WAX");
 }
 
 const setErr = (msg) => {
@@ -488,17 +505,16 @@ $(document).ready(async function() {
             value: "auto",
             text: "Auto"
         }));
-        $("#node").append($("<option>", {
-            value: node,
-            text: node,
-            selected: "selected"
-        }));
     }
 
     for (let i of data.rows) {
-        nodes.push(i.node);
+        nodes.push({name: i.node});
         if (i.node == node) {
-            continue;
+            $("#node").append($("<option>", {
+                value: i.node,
+                text: i.node,
+                selected: "selected"
+            }));
         } else {
             $("#node").append($("<option>", {
                 value: i.node,
@@ -542,6 +558,7 @@ $(document).ready(async function() {
     });
     $("#node").change(() => {
         node = $("#node").val();
+        setCPUBal(node);
     });
 
     if (await wallet_isAutoLoginAvailable()) {
