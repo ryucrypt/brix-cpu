@@ -83,8 +83,8 @@
                 <div class="col-auto">
                     <label for="currency" class="form-label">Pay with</label>
                     <select class="form-select" id="currency">
-                        <option value="BRIX" selected>BRIX</option>
-                        <option value="WAX">WAX</option>
+                        <option value="WAX" selected>WAX</option>
+                        <option value="BRIX">BRIX</option>
                     </select>
                 </div>
                 <div class="col-auto">
@@ -121,10 +121,10 @@
                         <div class="card-header">1 day</div>
                         <div class="card-body placeholder">
                             Pay
-                            <h3 id="price1">0 BRIX</h3>
+                            <h3 id="price1">0 WAX</h3>
                             <button class="btn btn-primary w-100" onclick="run(1);">Rent</button>
                         </div>
-                        <div class="card-footer text-body-secondary small"><span id="unit1">0 BRIX</span> for 100 WAX/day</div>
+                        <div class="card-footer text-body-secondary small"><span id="unit1">0 WAX</span> for 100 WAX/day</div>
                     </div>
                 </div>
                 <div class="col-md mb-3">
@@ -132,10 +132,10 @@
                         <div class="card-header">3 days</div>
                         <div class="card-body placeholder">
                             Pay
-                            <h3 id="price3">0 BRIX</h3>
+                            <h3 id="price3">0 WAX</h3>
                             <button class="btn btn-primary w-100" onclick="run(3);">Rent</button>
                         </div>
-                        <div class="card-footer text-body-secondary small"><span id="unit3">0 BRIX</span> for 100 WAX/day</div>
+                        <div class="card-footer text-body-secondary small"><span id="unit3">0 WAX</span> for 100 WAX/day</div>
                     </div>
                 </div>
                 <div class="col-md mb-3">
@@ -143,10 +143,10 @@
                         <div class="card-header">7 days</div>
                         <div class="card-body placeholder">
                             Pay
-                            <h3 id="price7">0 BRIX</h3>
+                            <h3 id="price7">0 WAX</h3>
                             <button class="btn btn-primary w-100" onclick="run(7);">Rent</button>
                         </div>
-                        <div class="card-footer text-body-secondary small"><span id="unit7">0 BRIX</span> for 100 WAX/day</div>
+                        <div class="card-footer text-body-secondary small"><span id="unit7">0 WAX</span> for 100 WAX/day</div>
                     </div>
                 </div>
                 <div class="col-md mb-3">
@@ -154,10 +154,10 @@
                         <div class="card-header">15 days</div>
                         <div class="card-body placeholder">
                             Pay
-                            <h3 id="price15">0 BRIX</h3>
+                            <h3 id="price15">0 WAX</h3>
                             <button class="btn btn-primary w-100" onclick="run(15);">Rent</button>
                         </div>
-                        <div class="card-footer text-body-secondary small"><span id="unit15">0 BRIX</span> for 100 WAX/day</div>
+                        <div class="card-footer text-body-secondary small"><span id="unit15">0 WAX</span> for 100 WAX/day</div>
                     </div>
                 </div>
                 <div class="col-md mb-3">
@@ -165,10 +165,10 @@
                         <div class="card-header">30 days</div>
                         <div class="card-body placeholder">
                             Pay
-                            <h3 id="price30">0 BRIX</h3>
+                            <h3 id="price30">0 WAX</h3>
                             <button class="btn btn-primary w-100" onclick="run(30);">Rent</button>
                         </div>
-                        <div class="card-footer text-body-secondary small"><span id="unit30">0 BRIX</span> for 100 WAX/day</div>
+                        <div class="card-footer text-body-secondary small"><span id="unit30">0 WAX</span> for 100 WAX/day</div>
                     </div>
                 </div>
             </div>
@@ -248,7 +248,7 @@ var perms = "";
 var node = "auto";
 var rates = {};
 var loggedin = false;
-var token = TOKENS[0];
+var token = TOKENS[1];
 var balances = [];
 var nodes = [];
 
