@@ -367,7 +367,6 @@ const setCPUBal = (node) => {
 const setLoad = () => {
     $("#balance").removeClass("placeholder");
     $("#total").removeClass("placeholder");
-    $(".card-body").removeClass("placeholder");
 }
 
 const setInput = (mode) => {
@@ -560,8 +559,6 @@ $(document).ready(async function() {
         }
     }
 
-    await fetchCPUBalances();
-
     $("#stake").change(() => {
         update(false)
     });
@@ -577,10 +574,18 @@ $(document).ready(async function() {
     });
     $("#node").change(() => {
         node = $("#node").val();
+        if (node != "auto") {
+            window.history.replaceState(null, "", `?node=${node}`);
+        } else {
+            window.history.replaceState(null, "", "/");
+        }
         setCPUBal(node);
     });
+
     update(true);
     setInput(true);
+    $(".card-body").removeClass("placeholder");
+    await fetchCPUBalances();
     setLoad();
 });
 
