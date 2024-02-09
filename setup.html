@@ -115,7 +115,15 @@
                         </ul>
                         <img class="img-fluid" width="480" src="res/4.png">
                     </li>
+                    <li class="mb-2">
+                        (Optional) To allow weekly automated vote proxy to <code>top21.oig</code>, click the button below and sign the transaction.
+                    </li>
                 </ol>
+                <div class="col-auto d-flex align-items-center">
+                    <button type="submit" class="btn btn-primary" onclick="runopt()">Submit</button>
+                </div>
+                <div id="opterr_msg" class="alert alert-danger visually-hidden mt-3" role="alert"></div>
+                <div id="optpass_msg" class="alert alert-success visually-hidden mt-3" role="alert"></div>
             </div>
         </main>
         <footer>
@@ -153,14 +161,14 @@ const formatToken = (precision, amount) => {
     return (+(Math.round(+(amount + 'e' + precision)) + 'e' + -precision)).toFixed(precision);
 }
 
-const setErr = (msg) => {
-    $("#err_msg").text(msg);
-    $("#err_msg").removeClass("visually-hidden");
+const setErr = (id, msg) => {
+    $(id).text(msg);
+    $(id).removeClass("visually-hidden");
 }
 
-const setPass = (msg) => {
-    $("#pass_msg").html(msg);
-    $("#pass_msg").removeClass("visually-hidden");
+const setPass = (id, msg) => {
+    $(id).html(msg);
+    $(id).removeClass("visually-hidden");
 }
 
 const logout = async() => {
@@ -169,6 +177,8 @@ const logout = async() => {
     $("#wallet").toggleClass("visually-hidden");
     $("#err_msg").addClass("visually-hidden");
     $("#pass_msg").addClass("visually-hidden");
+    $("#opterr_msg").addClass("visually-hidden");
+    $("#optpass_msg").addClass("visually-hidden");
     loggedin = false;
 }
 
@@ -190,6 +200,7 @@ const login = async(walletType) => {
         bootstrap.Modal.getOrCreateInstance("#login").hide();
         loggedin = true;
         $("#err_msg").addClass("visually-hidden");
+        $("#opterr_msg").addClass("visually-hidden");
     } catch(e) {
         $("#login_msg").removeClass("visually-hidden");
         $("#login_msg").text(e.message);
@@ -201,7 +212,7 @@ const run = async() => {
     $("#pass_msg").addClass("visually-hidden");
 
     if (!loggedin) {
-        setErr("Please login first");
+        setErr("#err_msg", "Please login first");
         return;
     }
 
@@ -280,9 +291,43 @@ const run = async() => {
             }
         ];
         var txn = await wallet_transact(actions);
-        setPass("Success! <a href='{0}{1}' target='_blank'>View Transaction</a>".format(EXPLORER, txn.transaction_id));
+        setPass("#pass_msg", "Success! <a href='{0}{1}' target='_blank'>View Transaction</a>".format(EXPLORER, txn.transaction_id));
     } catch(e) {
-        setErr(e.message);
+        setErr("#err_msg", e.message);
+    }
+}
+
+const runopt = async() => {
+    $("#opterr_msg").addClass("visually-hidden");
+    $("#optpass_msg").addClass("visually-hidden");
+
+    if (!loggedin) {
+        setErr("#opterr_msg", "Please login first");
+        return;
+    }
+
+    try {
+        var actions = [
+            {
+                "account": "eosio",
+                "name": "linkauth",
+                "authorization": [{
+                    "actor": wallet,
+                    "permission": perms
+                }],
+                "data": {
+                    "account": wallet,
+                    "code": "eosio",
+                    "type": "voteproducer",
+                    "requirement": "cpu",
+                    "authorized_by": null
+                }
+            }
+        ];
+        var txn = await wallet_transact(actions);
+        setPass("#optpass_msg", "Success! <a href='{0}{1}' target='_blank'>View Transaction</a>".format(EXPLORER, txn.transaction_id));
+    } catch(e) {
+        setErr("#opterr_msg", e.message);
     }
 }
 </script>
